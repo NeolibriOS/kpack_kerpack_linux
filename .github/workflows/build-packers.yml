@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: "Build packers"
+
+on:
+    push:
+        branches:
+            - "**"
+        paths:
+            - ".github/workflows/**"
+            - "Makefile*"
+            - "*.asm"
+            - "lzma_c/**"
+
+    pull_request:
+        branches:
+            - "**"
+        paths:
+            - ".github/workflows/**"
+            - "Makefile*"
+            - "*.asm"
+            - "lzma_c/**"
+
+defaults:
+    run:
+        shell: bash
+
+jobs:
+    build-packers:
+        name: "Build packers"
+
+        strategy:
+            matrix:
+                system:
+                    - ubuntu-24.04
+
+        runs-on: ${{ matrix.system }}
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup toolchain
+              run: |
+                  sudo apt update
+                  sudo apt install -y \
+                      build-essential \
+                      fasm
+
+            - name: Build packers
+              run: |
+                  make
+
+            - name: Upload modification
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ github.event.repository.name }}-${{ matrix.system }}-${{ github.sha }}
+                  path: |
+                      ${{ github.workspace }}/kpack
+                      ${{ github.workspace }}/kerpack
